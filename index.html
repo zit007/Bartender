@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATALOGIC | Barcode Dimensioning & Generator Tool</title>
+    <!-- bwip-js for barcode generation -->
+    <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.5.1/dist/bwip-js-min.js"></script>
+    <!-- jsPDF for engineering PDF export -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --dl-black: #0E1012;
+            --dl-panel-bg: #16191C;
+            --dl-card-bg: #1E2227;
+            --dl-header-bg: #121417;
+            --dl-border: #2D333B;
+            --dl-border-light: #444C56;
+            --dl-red: #E51A24;
+            --dl-red-hover: #FF2E38;
+            --dl-red-dark: #A30D14;
+            --dl-text-main: #F0F6FC;
+            --dl-text-muted: #8B949E;
+            --dl-text-dark: #1F2328;
+            --dl-status-green: #2EA043;
+            --dl-status-amber: #D29922;
+            --dl-status-red: #F85149;
+            --dl-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            --dl-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--dl-black);
+            color: var(--dl-text-main);
+            font-family: var(--dl-font-sans);
+            font-size: 13px;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--dl-header-bg);
+            border-bottom: 2px solid var(--dl-red);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-badge {
+            background-color: var(--dl-red);
+            color: #FFFFFF;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 2px;
+            padding: 4px 10px;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+
+        .title-group h1 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--dl-text-main);
+            text-transform: uppercase;
+        }
+
+        .title-group p {
+            font-size: 11px;
+            color: var(--dl-text-muted);
+            font-style: italic;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .preset-select-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Main Container Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 16px;
+            padding: 16px;
+            flex: 1;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panels & Cards */
+        .panel {
+            background-color: var(--dl-panel-bg);
+            border: 1px solid var(--dl-border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background-color: var(--dl-card-bg);
+            border-bottom: 1px solid var(--dl-border);
+            padding: 10px 16px;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--dl-text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-header-icon {
+            color: var(--dl-red);
+            margin-right: 8px;
+        }
+
+        .panel-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        /* Form Controls & Groups */
+        .section-group {
+            background-color: var(--dl-card-bg);
+            border: 1px solid var(--dl-border);
+            border-radius: 3px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--dl-red);
+            border-bottom: 1px solid var(--dl-border);
+            padding-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--dl-text-muted);
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            background-color: var(--dl-black);
+            border: 1px solid var(--dl-border-light);
+            color: var(--dl-text-main);
+            padding: 6px 10px;
+            border-radius: 2px;
+            font-family: var(--dl-font-mono);
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.15s ease;
+            width: 100%;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--dl-red);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .input-with-unit {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-with-unit input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .input-unit-label {
+            background-color: var(--dl-border);
+            color: var(--dl-text-muted);
+            padding: 6px 8px;
+            font-size: 11px;
+            font-family: var(--dl-font-mono);
+            border: 1px solid var(--dl-border-light);
+            border-left: none;
+            border-top-right-radius: 2px;
+            border-bottom-right-radius: 2px;
+        }
+
+        /* Toggle Switches & Checkboxes */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--dl-text-main);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            accent-color: var(--dl-red);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .radio-segment {
+            display: flex;
+            background-color: var(--dl-black);
+            border: 1px solid var(--dl-border-light);
+            border-radius: 2px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .radio-segment button {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--dl-text-muted);
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.15s ease;
+        }
+
+        .radio-segment button.active {
+            background-color: var(--dl-red);
+            color: #FFFFFF;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--dl-card-bg);
+            border: 1px solid var(--dl-border-light);
+            color: var(--dl-text-main);
+            padding: 8px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border-radius: 2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--dl-border);
+            border-color: var(--dl-text-muted);
+        }
+
+        .btn-primary {
+            background-color: var(--dl-red);
+            border-color: var(--dl-red);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--dl-red-hover);
+            border-color: var(--dl-red-hover);
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Preview Panel Layout */
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 100%;
+        }
+
+        .preview-stage-wrapper {
+            background-color: #08090A;
+            border: 1px solid var(--dl-border);
+            border-radius: 3px;
+            padding: 24px;
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: auto;
+        }
+
+        .preview-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(22, 25, 28, 0.85);
+            padding: 4px 8px;
+            border-radius: 3px;
+            border: 1px solid var(--dl-border);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        /* Dimension Frame Canvas Container */
+        .barcode-render-box {
+            position: relative;
+            background-color: #FFFFFF;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s ease;
+            transform-origin: center center;
+        }
+
+        /* Measurement Line Annotations */
+        .dimension-annotation-h {
+            position: absolute;
+            bottom: -22px;
+            left: 0;
+            right: 0;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid var(--dl-red);
+            border-right: 1px solid var(--dl-red);
+            font-family: var(--dl-font-mono);
+            font-size: 10px;
+            color: var(--dl-red);
+            font-weight: 700;
+        }
+
+        .dimension-annotation-h::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background-color: var(--dl-red);
+            z-index: 1;
+        }
+
+        .dimension-annotation-h span {
+            background-color: var(--dl-black);
+            padding: 0 4px;
+            z-index: 2;
+        }
+
+        .dimension-annotation-v {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: -28px;
+            width: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid var(--dl-red);
+            border-bottom: 1px solid var(--dl-red);
+            font-family: var(--dl-font-mono);
+            font-size: 10px;
+            color: var(--dl-red);
+            font-weight: 700;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .dimension-annotation-v::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background-color: var(--dl-red);
+            z-index: 1;
+        }
+
+        .dimension-annotation-v span {
+            background-color: var(--dl-black);
+            padding: 4px 0;
+            z-index: 2;
+        }
+
+        /* Status Indicator Cards */
+        .status-banner {
+            padding: 10px 14px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .status-banner.valid {
+            background-color: rgba(46, 160, 67, 0.15);
+            border: 1px solid var(--dl-status-green);
+            color: #56D364;
+        }
+
+        .status-banner.warning {
+            background-color: rgba(210, 153, 34, 0.15);
+            border: 1px solid var(--dl-status-amber);
+            color: #E3B341;
+        }
+
+        .status-banner.invalid {
+            background-color: rgba(248, 81, 73, 0.15);
+            border: 1px solid var(--dl-status-red);
+            color: #FF7B72;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-banner.valid .status-dot { background-color: var(--dl-status-green); }
+        .status-banner.warning .status-dot { background-color: var(--dl-status-amber); }
+        .status-banner.invalid .status-dot { background-color: var(--dl-status-red); }
+
+        /* Engineering Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .metric-card {
+            background-color: var(--dl-card-bg);
+            border: 1px solid var(--dl-border);
+            border-radius: 3px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--dl-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-family: var(--dl-font-mono);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dl-text-main);
+        }
+
+        .metric-sub {
+            font-size: 10px;
+            color: var(--dl-text-muted);
+        }
+
+        .metric-value.highlight-red {
+            color: var(--dl-red);
+        }
+
+        .metric-value.highlight-green {
+            color: #56D364;
+        }
+
+        /* Help Tooltips & Messages */
+        .field-error {
+            color: var(--dl-status-red);
+            font-size: 11px;
+            margin-top: 2px;
+            display: none;
+        }
+
+        .field-error.active {
+            display: block;
+        }
+
+        /* Action Bar */
+        .bottom-action-bar {
+            background-color: var(--dl-header-bg);
+            border-top: 1px solid var(--dl-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background-color: var(--dl-panel-bg);
+            border: 1px solid var(--dl-border-light);
+            border-radius: 4px;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background-color: var(--dl-card-bg);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--dl-border);
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--dl-border);
+            background-color: var(--dl-header-bg);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Footer Disclaimer */
+        footer {
+            background-color: var(--dl-header-bg);
+            border-top: 1px solid var(--dl-border);
+            padding: 8px 24px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--dl-text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-container">
+            <div class="brand-badge">DATALOGIC</div>
+            <div class="title-group">
+                <h1>BARCODE DIMENSIONING TOOL</h1>
+                <p>Industrial Barcode Generator &amp; Print Calibration Utility</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="preset-select-container">
+                <label for="presetSelect">Preset Setup:</label>
+                <select id="presetSelect" style="width: 220px;" onchange="loadPreset(this.value)">
+                    <option value="custom">-- Custom Configuration --</option>
+                    <option value="shipping1D">10 mil Code 128 Shipping Label (100mm)</option>
+                    <option value="dpm2D">15 mil Data Matrix Direct Part Marking (25mm)</option>
+                    <option value="palletGS1">20 mil GS1-128 Pallet Label (150mm)</option>
+                    <option value="retailEAN">13 mil EAN-13 Retail Packaging (37mm)</option>
+                    <option value="assetQR">12 mil QR Code Equipment Tag (30mm)</option>
+                    <option value="itf14Case">20 mil ITF-14 Outer Carton (120mm)</option>
+                </select>
+            </div>
+            <button class="btn btn-sm" onclick="exportJsonConfig()" title="Export current setup to JSON">Save Setup</button>
+            <button class="btn btn-sm" onclick="document.getElementById('jsonFileInput').click()" title="Load setup from JSON">Load Setup</button>
+            <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="importJsonConfig(event)">
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="app-container">
+
+        <!-- Left Panel: Configuration -->
+        <div class="panel">
+            <div class="panel-header">
+                <span><span class="panel-header-icon">&#9881;</span> BARCODE CONFIGURATION</span>
+                <span id="symbologyCategoryBadge" class="btn btn-sm" style="background-color: var(--dl-black); font-size: 9px;">1D SYMBOLOGY</span>
+            </div>
+            <div class="panel-body">
+
+                <!-- Payload Section -->
+                <div class="section-group">
+                    <div class="section-title">
+                        <span>A. Payload &amp; Data Content</span>
+                        <span id="charCounter" style="color: var(--dl-text-muted); font-family: var(--dl-font-mono);">12 Chars</span>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Payload Mode:</label>
+                        <div class="radio-segment" style="width: 180px;">
+                            <button id="modeAutoBtn" class="active" onclick="setPayloadMode('auto')">Auto</button>
+                            <button id="modeManualBtn" onclick="setPayloadMode('manual')">Manual</button>
+                        </div>
+                    </div>
+
+                    <div id="autoGenControls" class="form-row">
+                        <div class="form-group">
+                            <label for="charCountInput">Character Count (Length):</label>
+                            <input type="number" id="charCountInput" min="1" max="100" value="12" oninput="onCharCountChange()">
+                        </div>
+                        <button class="btn btn-sm" style="margin-top: 18px;" onclick="regeneratePayload()">Regenerate</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="barcodeDataInput">Barcode Data Payload:</label>
+                        <textarea id="barcodeDataInput" spellcheck="false" oninput="onManualDataChange()"></textarea>
+                        <div id="payloadError" class="field-error">Invalid characters for selected symbology.</div>
+                    </div>
+                </div>
+
+                <!-- Symbology Section -->
+                <div class="section-group">
+                    <div class="section-title">B. Symbology Selection</div>
+
+                    <div class="form-group">
+                        <label for="symbologySelect">Barcode Symbology:</label>
+                        <select id="symbologySelect" onchange="onSymbologyChange()">
+                            <optgroup label="1D Symbologies">
+                                <option value="code128" selected>Code 128 (Full ASCII)</option>
+                                <option value="code39">Code 39 (Alphanumeric)</option>
+                                <option value="code93">Code 93</option>
+                                <option value="codabar">Codabar</option>
+                                <option value="interleaved2of5">Interleaved 2 of 5 (ITF)</option>
+                                <option value="itf14">ITF-14 (Fixed 14 Numeric)</option>
+                                <option value="upca">UPC-A (Fixed 12 Numeric)</option>
+                                <option value="upce">UPC-E (Fixed 8 Numeric)</option>
+                                <option value="ean8">EAN-8 (Fixed 8 Numeric)</option>
+                                <option value="ean13">EAN-13 (Fixed 13 Numeric)</option>
+                                <option value="gs1-128">GS1-128 (Application Identifiers)</option>
+                                <option value="databaromni">GS1 DataBar Omnidirectional</option>
+                                <option value="databarexpanded">GS1 DataBar Expanded</option>
+                            </optgroup>
+                            <optgroup label="2D Symbologies">
+                                <option value="datamatrix">Data Matrix ECC 200</option>
+                                <option value="gs1datamatrix">GS1 DataMatrix</option>
+                                <option value="qrcode">QR Code</option>
+                                <option value="microqrcode">Micro QR Code</option>
+                                <option value="pdf417">PDF417</option>
+                                <option value="micropdf417">MicroPDF417</option>
+                                <option value="azteccode">Aztec Code</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div id="symbologyRulesHint" style="font-size: 11px; color: var(--dl-text-muted);">
+                        • Supports standard alphanumeric ASCII payload.
+                    </div>
+                </div>
+
+                <!-- Physical Dimensions Section -->
+                <div class="section-group">
+                    <div class="section-title">
+                        <span>C. Physical Dimensions</span>
+                        <div class="radio-segment" style="width: 130px;">
+                            <button id="unitMmBtn" class="active" onclick="setUnit('mm')">mm</button>
+                            <button id="unitInBtn" onclick="setUnit('in')">in</button>
+                            <button id="unitMilBtn" onclick="setUnit('mil')">mil</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="targetWidthInput">Target Total Width:</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="targetWidthInput" step="0.1" value="100.0" oninput="onDimensionChange()">
+                                <span class="input-unit-label unit-display">mm</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="targetHeightInput">Target Total Height:</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="targetHeightInput" step="0.1" value="25.0" oninput="onDimensionChange()">
+                                <span class="input-unit-label unit-display">mm</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quiet Zone Options -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quietZoneModeSelect">Quiet Zone Mode:</label>
+                            <select id="quietZoneModeSelect" onchange="onDimensionChange()">
+                                <option value="auto" selected>Automatic (Symbology Standard)</option>
+                                <option value="custom">Custom Quiet Zone</option>
+                                <option value="none">None (0 Quiet Zone)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="customQuietZoneGroup">
+                            <label for="customQuietZoneInput">Quiet Zone (Modules):</label>
+                            <input type="number" id="customQuietZoneInput" min="0" max="50" value="10" oninput="onDimensionChange()">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quietZoneInclusionSelect">Target Width Scope:</label>
+                        <select id="quietZoneInclusionSelect" onchange="onDimensionChange()">
+                            <option value="include" selected>Target Width INCLUDES Quiet Zones</option>
+                            <option value="exclude">Target Width EXCLUDES Quiet Zones (Added on top)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Appearance & Display Options -->
+                <div class="section-group">
+                    <div class="section-title">D. Appearance &amp; Rendering</div>
+
+                    <div class="toggle-group" id="humanTextToggleGroup">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeTextCheckbox" checked onchange="onDimensionChange()">
+                            <span>Include Human-Readable Data Text</span>
+                        </label>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fgColorInput">Foreground Color:</label>
+                            <input type="color" id="fgColorInput" value="#000000" style="height: 32px; padding: 2px;" onchange="onDimensionChange()">
+                        </div>
+                        <div class="form-group">
+                            <label for="bgColorInput">Background Color:</label>
+                            <input type="color" id="bgColorInput" value="#ffffff" style="height: 32px; padding: 2px;" onchange="onDimensionChange()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showAnnotationsCheckbox" checked onchange="updatePreviewDisplay()">
+                            <span>Show Dimension Annotations</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showGridCheckbox" onchange="updatePreviewDisplay()">
+                            <span>Show Module Grid</span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Panel: Live Preview & Engineering Metrics -->
+        <div class="panel">
+            <div class="panel-header">
+                <span><span class="panel-header-icon">&#128065;</span> LIVE PREVIEW &amp; ENGINEERING CALCULATION</span>
+                <span id="previewScaleLabel" style="font-family: var(--dl-font-mono); font-size: 11px; color: var(--dl-text-muted);">Zoom: 100%</span>
+            </div>
+            <div class="panel-body preview-container">
+
+                <!-- Stage Wrapper -->
+                <div class="preview-stage-wrapper" id="stageWrapper">
+                    <div class="preview-controls">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--dl-text-muted);">ZOOM</span>
+                        <input type="range" id="zoomSlider" min="50" max="250" value="100" style="width: 80px;" oninput="onZoomChange(this.value)">
+                        <button class="btn btn-sm" onclick="resetZoom()">Reset</button>
+                        <button id="cleanPreviewBtn" class="btn btn-sm" onclick="toggleCleanPreview()">Clean View</button>
+                    </div>
+
+                    <!-- Render Container -->
+                    <div id="barcodeBox" class="barcode-render-box">
+                        <canvas id="barcodeCanvas"></canvas>
+                        <div id="annotH" class="dimension-annotation-h"><span>100.0 mm</span></div>
+                        <div id="annotV" class="dimension-annotation-v"><span>25.0 mm</span></div>
+                    </div>
+                </div>
+
+                <!-- Validation Status Banner -->
+                <div id="statusBanner" class="status-banner valid">
+                    <div class="status-dot"></div>
+                    <span id="statusBannerText">VALID &amp; ACHIEVABLE - Industrial Print Ready</span>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+
+                    <div class="metric-card">
+                        <span class="metric-label">X-Dimension (Narrow Module)</span>
+                        <span id="metricXDimMm" class="metric-value highlight-green">0.254 mm</span>
+                        <span id="metricXDimMil" class="metric-sub">10.00 mil</span>
+                    </div>
+
+                    <div class="metric-card">
+                        <span class="metric-label">Module Grid Geometry</span>
+                        <span id="metricModules" class="metric-value">318 x 1</span>
+                        <span id="metricModulesSub" class="metric-sub">Horizontal x Vertical Modules</span>
+                    </div>
+
+                    <div class="metric-card">
+                        <span class="metric-label">Effective Total Dimensions</span>
+                        <span id="metricEffectiveSize" class="metric-value">100.0 x 25.0 mm</span>
+                        <span id="metricEffectiveInches" class="metric-sub">3.937 x 0.984 in</span>
+                    </div>
+
+                    <div class="metric-card">
+                        <span class="metric-label">Quiet Zone Width</span>
+                        <span id="metricQuietZone" class="metric-value">2.54 mm</span>
+                        <span id="metricQuietZoneSub" class="metric-sub">10 Modules Each Side</span>
+                    </div>
+
+                </div>
+
+                <!-- Industrial Scanner Readability Guidance -->
+                <div class="section-group" style="margin-top: 4px;">
+                    <div class="section-title">Industrial Scanner Readability Guidance</div>
+                    <div id="readabilityGuidance" style="font-size: 11px; color: var(--dl-text-muted); line-height: 1.5;">
+                        • <strong>X-Dimension 10.0 mil (0.254 mm):</strong> Standard density suitable for high-speed conveyor scanning, handheld industrial imagers, and automated logistics. Maintain high print contrast ratio (symbol contrast > 75%).
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Action Bar -->
+    <div class="bottom-action-bar">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="generateBarcode()">&#8635; Update Preview</button>
+            <button class="btn" onclick="copyPayloadToClipboard()">Copy Payload</button>
+            <button class="btn" onclick="resetConfiguration()">Reset Defaults</button>
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="exportSvg()">Export SVG</button>
+            <button class="btn" onclick="exportPng()">Export PNG</button>
+            <button class="btn btn-primary" style="background-color: #2EA043; border-color: #2EA043;" onclick="openPdfModal()">EXPORT PDF (1:1 Scale)</button>
+        </div>
+    </div>
+
+    <!-- PDF Export Settings Modal -->
+    <div id="pdfModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>EXPORT ENGINEERING CALIBRATION PDF</span>
+                <button class="btn btn-sm" onclick="closePdfModal()">&#10005;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pdfPageSize">Page Format:</label>
+                        <select id="pdfPageSize">
+                            <option value="a4" selected>A4 (210 x 297 mm)</option>
+                            <option value="letter">Letter (8.5 x 11 in)</option>
+                            <option value="a5">A5 (148 x 210 mm)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pdfOrientation">Orientation:</label>
+                        <select id="pdfOrientation">
+                            <option value="portrait" selected>Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="pdfIncludeHeader" checked>
+                        <span>Include Datalogic Engineering Header &amp; Metadata Block</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="pdfIncludeRuler" checked>
+                        <span>Include 50 mm Physical Reference Calibration Ruler</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="pdfIncludeAnnotations" checked>
+                        <span>Include Dimension Measurement Lines on Barcode</span>
+                    </label>
+                </div>
+
+                <div style="font-size: 11px; color: var(--dl-text-muted); background-color: var(--dl-black); padding: 10px; border-radius: 3px; border: 1px solid var(--dl-border);">
+                    <strong>Important Printing Calibration Note:</strong><br>
+                    To maintain accurate physical module dimensions, print the generated PDF at <strong>100% / Actual Size</strong> without page scaling or fit-to-page adjustments. Always verify printed dimensions using the 50 mm reference ruler.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closePdfModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="generatePdf()">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Disclaimer -->
+    <footer>
+        Independent Engineering Utility inspired by Datalogic industrial barcode readers and machine vision standards. All specifications are based on standard symbology specifications.
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // State variables
+        let currentUnit = 'mm'; // 'mm', 'in', 'mil'
+        let payloadMode = 'auto'; // 'auto', 'manual'
+        let currentZoom = 100;
+        let isCleanPreview = false;
+        let lastBarcodeSymbol = null; // Encoded structure info
+
+        // Conversions
+        const MM_PER_INCH = 25.4;
+        const MILS_PER_INCH = 1000.0;
+        const MM_PER_MIL = 0.0254;
+        const MILS_PER_MM = 39.37007874;
+
+        // Symbology metadata rules
+        const SYMBOLOGY_SPECS = {
+            'code128': { name: 'Code 128', type: '1d', numericOnly: false, minLen: 1, maxLen: 80, defaultText: 'DATALOGIC123', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'code39': { name: 'Code 39', type: '1d', numericOnly: false, minLen: 1, maxLen: 50, defaultText: 'DATALOGIC39', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'code93': { name: 'Code 93', type: '1d', numericOnly: false, minLen: 1, maxLen: 60, defaultText: 'DATALOGIC93', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'codabar': { name: 'Codabar', type: '1d', numericOnly: false, minLen: 2, maxLen: 40, defaultText: 'A123456789B', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'interleaved2of5': { name: 'Interleaved 2 of 5', type: '1d', numericOnly: true, minLen: 2, maxLen: 50, defaultText: '1234567890', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'itf14': { name: 'ITF-14', type: '1d', numericOnly: true, minLen: 13, maxLen: 14, defaultText: '10012345678902', defaultWidthMm: 120, defaultHeightMm: 32, quietZoneModules: 10 },
+            'upca': { name: 'UPC-A', type: '1d', numericOnly: true, minLen: 11, maxLen: 12, defaultText: '012345678905', defaultWidthMm: 37.3, defaultHeightMm: 25.9, quietZoneModules: 9 },
+            'upce': { name: 'UPC-E', type: '1d', numericOnly: true, minLen: 7, maxLen: 8, defaultText: '01234565', defaultWidthMm: 22.0, defaultHeightMm: 25.9, quietZoneModules: 9 },
+            'ean8': { name: 'EAN-8', type: '1d', numericOnly: true, minLen: 7, maxLen: 8, defaultText: '20123451', defaultWidthMm: 26.7, defaultHeightMm: 21.3, quietZoneModules: 7 },
+            'ean13': { name: 'EAN-13', type: '1d', numericOnly: true, minLen: 12, maxLen: 13, defaultText: '4012345678901', defaultWidthMm: 37.3, defaultHeightMm: 25.9, quietZoneModules: 11 },
+            'gs1-128': { name: 'GS1-128', type: '1d', numericOnly: false, minLen: 4, maxLen: 80, defaultText: '(01)00012345678905(10)ABC123', defaultWidthMm: 130, defaultHeightMm: 32, quietZoneModules: 10 },
+            'databaromni': { name: 'GS1 DataBar Omnidirectional', type: '1d', numericOnly: true, minLen: 13, maxLen: 14, defaultText: '00012345678905', defaultWidthMm: 50, defaultHeightMm: 15, quietZoneModules: 5 },
+            'databarexpanded': { name: 'GS1 DataBar Expanded', type: '1d', numericOnly: false, minLen: 4, maxLen: 80, defaultText: '(01)90614141000015(3103)000500', defaultWidthMm: 80, defaultHeightMm: 18, quietZoneModules: 5 },
+
+            // 2D Symbologies
+            'datamatrix': { name: 'Data Matrix ECC 200', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-DM-2026', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 },
+            'gs1datamatrix': { name: 'GS1 DataMatrix', type: '2d', numericOnly: false, minLen: 4, maxLen: 100, defaultText: '(01)00012345678905(21)SN123456', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 },
+            'qrcode': { name: 'QR Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'HTTPS://WWW.DATALOGIC.COM', defaultWidthMm: 30, defaultHeightMm: 30, quietZoneModules: 4 },
+            'microqrcode': { name: 'Micro QR Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 20, defaultText: 'MQR1234', defaultWidthMm: 15, defaultHeightMm: 15, quietZoneModules: 2 },
+            'pdf417': { name: 'PDF417', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-PDF417-TEST-PAYLOAD', defaultWidthMm: 60, defaultHeightMm: 20, quietZoneModules: 2 },
+            'micropdf417': { name: 'MicroPDF417', type: '2d', numericOnly: false, minLen: 1, maxLen: 50, defaultText: 'MICRO-PDF-1234', defaultWidthMm: 40, defaultHeightMm: 15, quietZoneModules: 2 },
+            'azteccode': { name: 'Aztec Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-AZTEC-2026', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 }
+        };
+
+        // Presets configuration
+        const PRESETS = {
+            'shipping1D': { symbology: 'code128', charCount: 14, payloadMode: 'auto', widthMm: 100, heightMm: 25, unit: 'mm', includeText: true },
+            'dpm2D': { symbology: 'datamatrix', charCount: 18, payloadMode: 'auto', widthMm: 25, heightMm: 25, unit: 'mm', includeText: false },
+            'palletGS1': { symbology: 'gs1-128', charCount: 28, payloadMode: 'manual', manualData: '(01)00012345678905(10)BATCH123', widthMm: 150, heightMm: 35, unit: 'mm', includeText: true },
+            'retailEAN': { symbology: 'ean13', charCount: 13, payloadMode: 'auto', widthMm: 37.3, heightMm: 25.9, unit: 'mm', includeText: true },
+            'assetQR': { symbology: 'qrcode', charCount: 22, payloadMode: 'manual', manualData: 'ASSET-2026-DL-88392', widthMm: 30, heightMm: 30, unit: 'mm', includeText: false },
+            'itf14Case': { symbology: 'itf14', charCount: 14, payloadMode: 'auto', widthMm: 120, heightMm: 32, unit: 'mm', includeText: true }
+        };
+
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        function initApp() {
+            onSymbologyChange();
+        }
+
+        // Unit conversion utility for inputs
+        function convertMmToUnit(valMm, unit) {
+            if (unit === 'in') return valMm / MM_PER_INCH;
+            if (unit === 'mil') return (valMm / MM_PER_INCH) * MILS_PER_INCH;
+            return valMm;
+        }
+
+        function convertUnitToMm(val, unit) {
+            if (unit === 'in') return val * MM_PER_INCH;
+            if (unit === 'mil') return (val / MILS_PER_INCH) * MM_PER_INCH;
+            return val;
+        }
+
+        function setUnit(newUnit) {
+            if (currentUnit === newUnit) return;
+
+            // Convert existing target width & height inputs to new unit values
+            const widthInMm = convertUnitToMm(parseFloat(document.getElementById('targetWidthInput').value) || 0, currentUnit);
+            const heightInMm = convertUnitToMm(parseFloat(document.getElementById('targetHeightInput').value) || 0, currentUnit);
+
+            currentUnit = newUnit;
+
+            document.getElementById('unitMmBtn').classList.toggle('active', currentUnit === 'mm');
+            document.getElementById('unitInBtn').classList.toggle('active', currentUnit === 'in');
+            document.getElementById('unitMilBtn').classList.toggle('active', currentUnit === 'mil');
+
+            const unitDisplays = document.querySelectorAll('.unit-display');
+            unitDisplays.forEach(el => el.textContent = currentUnit);
+
+            const convertedWidth = convertMmToUnit(widthInMm, currentUnit);
+            const convertedHeight = convertMmToUnit(heightInMm, currentUnit);
+
+            document.getElementById('targetWidthInput').value = convertedWidth.toFixed(currentUnit === 'mil' ? 1 : 2);
+            document.getElementById('targetHeightInput').value = convertedHeight.toFixed(currentUnit === 'mil' ? 1 : 2);
+
+            generateBarcode();
+        }
+
+        function setPayloadMode(mode) {
+            payloadMode = mode;
+            document.getElementById('modeAutoBtn').classList.toggle('active', mode === 'auto');
+            document.getElementById('modeManualBtn').classList.toggle('active', mode === 'manual');
+
+            document.getElementById('autoGenControls').style.display = (mode === 'auto') ? 'flex' : 'none';
+            document.getElementById('barcodeDataInput').readOnly = (mode === 'auto');
+
+            if (mode === 'auto') {
+                regeneratePayload();
+            } else {
+                onManualDataChange();
+            }
+        }
+
+        function onSymbologyChange() {
+            const symKey = document.getElementById('symbologySelect').value;
+            const spec = SYMBOLOGY_SPECS[symKey] || SYMBOLOGY_SPECS['code128'];
+
+            // Update badge
+            const categoryBadge = document.getElementById('symbologyCategoryBadge');
+            categoryBadge.textContent = spec.type.toUpperCase() + ' SYMBOLOGY';
+            categoryBadge.style.color = spec.type === '1d' ? '#56D364' : '#E3B341';
+
+            // Show/Hide human readable checkbox (only relevant for 1D or supported 2D)
+            const humanTextGroup = document.getElementById('humanTextToggleGroup');
+            if (spec.type === '1d') {
+                humanTextGroup.style.display = 'flex';
+            } else {
+                humanTextGroup.style.display = 'none';
+            }
+
+            // Update rules text
+            let rulesStr = `• ${spec.name}: ${spec.numericOnly ? 'Numeric characters only.' : 'Supports standard payload.'}`;
+            if (spec.minLen === spec.maxLen) {
+                rulesStr += ` Fixed length: ${spec.minLen} characters.`;
+            }
+            document.getElementById('symbologyRulesHint').textContent = rulesStr;
+
+            // Update defaults if needed
+            if (payloadMode === 'auto') {
+                document.getElementById('charCountInput').value = spec.defaultText.replace(/[\(\)]/g, '').length;
+                regeneratePayload();
+            } else {
+                if (!document.getElementById('barcodeDataInput').value) {
+                    document.getElementById('barcodeDataInput').value = spec.defaultText;
+                }
+                generateBarcode();
+            }
+        }
+
+        function generateRandomString(length, numericOnly) {
+            const nums = '0123456789';
+            const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let result = '';
+            const src = numericOnly ? nums : chars;
+            for (let i = 0; i < length; i++) {
+                result += src.charAt(Math.floor(Math.random() * src.length));
+            }
+            return result;
+        }
+
+        function regeneratePayload() {
+            const symKey = document.getElementById('symbologySelect').value;
+            const spec = SYMBOLOGY_SPECS[symKey] || SYMBOLOGY_SPECS['code128'];
+            let count = parseInt(document.getElementById('charCountInput').value) || 12;
+
+            if (spec.minLen === spec.maxLen) {
+                count = spec.minLen;
+                document.getElementById('charCountInput').value = count;
+            } else {
+                count = Math.max(spec.minLen, Math.min(spec.maxLen, count));
+                document.getElementById('charCountInput').value = count;
+            }
+
+            let payload = '';
+            if (symKey === 'ean13') {
+                payload = generateRandomString(12, true);
+                payload += calcEanCheckDigit(payload);
+            } else if (symKey === 'ean8') {
+                payload = generateRandomString(7, true);
+                payload += calcEanCheckDigit(payload);
+            } else if (symKey === 'upca') {
+                payload = generateRandomString(11, true);
+                payload += calcEanCheckDigit(payload);
+            } else if (symKey === 'upce') {
+                payload = '0' + generateRandomString(6, true) + '0';
+            } else if (symKey === 'itf14') {
+                const base = generateRandomString(13, true);
+                payload = base + calcEanCheckDigit(base);
+            } else {
+                payload = generateRandomString(count, spec.numericOnly);
+            }
+
+            document.getElementById('barcodeDataInput').value = payload;
+            document.getElementById('charCounter').textContent = payload.length + ' Chars';
+            generateBarcode();
+        }
+
+        function calcEanCheckDigit(digits) {
+            let sum = 0;
+            const len = digits.length;
+            for (let i = 0; i < len; i++) {
+                let d = parseInt(digits.charAt(len - 1 - i), 10);
+                sum += (i % 2 === 0) ? d * 3 : d;
+            }
+            const checksum = (10 - (sum % 10)) % 10;
+            return checksum.toString();
+        }
+
+        function onCharCountChange() {
+            if (payloadMode === 'auto') {
+                regeneratePayload();
+            }
+        }
+
+        function onManualDataChange() {
+            const payload = document.getElementById('barcodeDataInput').value;
+            document.getElementById('charCounter').textContent = payload.length + ' Chars';
+            generateBarcode();
+        }
+
+        function onDimensionChange() {
+            generateBarcode();
+        }
+
+        // Core Barcode Generation & Metric Calculation Function
+        function generateBarcode() {
+            const symKey = document.getElementById('symbologySelect').value;
+            const spec = SYMBOLOGY_SPECS[symKey] || SYMBOLOGY_SPECS['code128'];
+            let payload = document.getElementById('barcodeDataInput').value;
+
+            const payloadErrorEl = document.getElementById('payloadError');
+            payloadErrorEl.classList.remove('active');
+
+            if (!payload) {
+                payloadErrorEl.textContent = 'Payload cannot be empty.';
+                payloadErrorEl.classList.add('active');
+                updateStatusBanner('invalid', 'INVALID CONFIGURATION - Payload is empty.');
+                return;
+            }
+
+            // Input Target Dimensions in mm
+            const rawWidthVal = parseFloat(document.getElementById('targetWidthInput').value) || spec.defaultWidthMm;
+            const rawHeightVal = parseFloat(document.getElementById('targetHeightInput').value) || spec.defaultHeightMm;
+            const targetWidthMm = convertUnitToMm(rawWidthVal, currentUnit);
+            const targetHeightMm = convertUnitToMm(rawHeightVal, currentUnit);
+
+            // Quiet Zone mode & values
+            const qzMode = document.getElementById('quietZoneModeSelect').value;
+            document.getElementById('customQuietZoneGroup').style.display = (qzMode === 'custom') ? 'flex' : 'none';
+
+            let quietZoneModules = spec.quietZoneModules;
+            if (qzMode === 'custom') {
+                quietZoneModules = parseInt(document.getElementById('customQuietZoneInput').value) || 0;
+            } else if (qzMode === 'none') {
+                quietZoneModules = 0;
+            }
+
+            const qzInclusion = document.getElementById('quietZoneInclusionSelect').value; // 'include' or 'exclude'
+            const includeText = document.getElementById('includeTextCheckbox').checked && (spec.type === '1d');
+            const fgColor = document.getElementById('fgColorInput').value.replace('#', '');
+            const bgColor = document.getElementById('bgColorInput').value.replace('#', '');
+
+            // Canvas & rendering
+            const canvas = document.getElementById('barcodeCanvas');
+            const ctx = canvas.getContext('2d');
+
+            try {
+                // Render barcode onto canvas using bwipjs
+                const opts = {
+                    bcid: symKey,
+                    text: payload,
+                    scale: 3, // High rendering scale for sharp vector crispness
+                    includetext: includeText,
+                    textxalign: 'center',
+                    barcolor: fgColor,
+                    backgroundcolor: bgColor,
+                    paddingwidth: quietZoneModules,
+                    paddingheight: (spec.type === '2d') ? quietZoneModules : 0
+                };
+
+                // Perform rendering via bwipjs
+                bwipjs.toCanvas(canvas, opts);
+
+                // Derive module matrix geometry from canvas and encoding
+                // In bwipjs, toCanvas populates the canvas pixels.
+                // Let's obtain the encoded symbol dimensions in terms of module counts
+                // For 1D & 2D symbologies, we inspect canvas width/height and determine module resolution
+
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+
+                // Obtain module matrix estimation or exact structure from bwipjs
+                // We calculate horizontal and vertical modules count
+                let numModulesX = 100;
+                let numModulesY = 1;
+
+                // Detailed symbol module estimation
+                if (spec.type === '2d') {
+                    // For 2D barcodes (Data Matrix, QR Code, Aztec), standard modules are square grid
+                    // bwipjs scales modules uniformly
+                    // Calculate exact modules by sampling canvas pixel matrix
+                    numModulesX = extract2DModuleCount(ctx, canvasWidth, canvasHeight);
+                    numModulesY = numModulesX; // Most 2D are square, or aspect proportional
+                } else {
+                    // For 1D barcodes, module count = total symbol width in X-modules (including quiet zones)
+                    numModulesX = extract1DModuleCount(ctx, canvasWidth, canvasHeight);
+                    numModulesY = 1;
+                }
+
+                // Physical Calculations Engine
+                let symbolWidthMm = targetWidthMm;
+                let effectiveWidthMm = targetWidthMm;
+
+                if (qzInclusion === 'include') {
+                    // Target width includes quiet zones
+                    effectiveWidthMm = targetWidthMm;
+                } else {
+                    // Target width excludes quiet zone -> quiet zones are added on top
+                    const quietZoneSingleSideMm = (quietZoneModules / numModulesX) * targetWidthMm;
+                    effectiveWidthMm = targetWidthMm + (2 * quietZoneSingleSideMm);
+                }
+
+                // X-Dimension calculation
+                const xDimensionMm = effectiveWidthMm / numModulesX;
+                const xDimensionMils = xDimensionMm * MILS_PER_MM;
+
+                const effectiveHeightMm = targetHeightMm;
+                const quietZoneWidthMm = xDimensionMm * quietZoneModules;
+
+                // Save symbol state
+                lastBarcodeSymbol = {
+                    symKey,
+                    spec,
+                    payload,
+                    numModulesX,
+                    numModulesY,
+                    xDimensionMm,
+                    xDimensionMils,
+                    effectiveWidthMm,
+                    effectiveHeightMm,
+                    quietZoneWidthMm,
+                    quietZoneModules,
+                    fgColor,
+                    bgColor
+                };
+
+                // Update UI Display Cards
+                updateEngineeringMetrics(lastBarcodeSymbol);
+
+                // Update Annotation Overlay Lines
+                updateAnnotations(effectiveWidthMm, effectiveHeightMm);
+
+                // Validate and update status banner
+                validateConfiguration(lastBarcodeSymbol);
+
+            } catch (err) {
+                console.error('Barcode rendering error:', err);
+                payloadErrorEl.textContent = err.message || 'Error encoding barcode with selected symbology.';
+                payloadErrorEl.classList.add('active');
+                updateStatusBanner('invalid', 'INVALID PAYLOAD - ' + (err.message || 'Encoding failed.'));
+            }
+        }
+
+        // Extract exact module counts from rendered canvas pixel run-lengths
+        function extract2DModuleCount(ctx, width, height) {
+            const scanY = Math.floor(height / 2);
+            const imageData = ctx.getImageData(0, scanY, width, 1).data;
+
+            // Find minimum run length of consecutive black/white pixels (1 module size)
+            let minRun = width;
+            let currentRun = 0;
+            let lastIsDark = (imageData[0] < 128);
+
+            for (let x = 0; x < width; x++) {
+                const isDark = (imageData[x * 4] < 128);
+                if (isDark === lastIsDark) {
+                    currentRun++;
+                } else {
+                    if (currentRun > 0 && currentRun < minRun) {
+                        minRun = currentRun;
+                    }
+                    currentRun = 1;
+                    lastIsDark = isDark;
+                }
+            }
+            if (currentRun > 0 && currentRun < minRun) minRun = currentRun;
+
+            if (minRun <= 0 || minRun === width) return 26;
+            return Math.round(width / minRun);
+        }
+
+        function extract1DModuleCount(ctx, width, height) {
+            const scanY = Math.floor(height / 2);
+            const imageData = ctx.getImageData(0, scanY, width, 1).data;
+
+            // Find minimum run length of dark/light bars across the barcode scanline
+            let minRun = width;
+            let currentRun = 0;
+            let lastIsDark = (imageData[0] < 128);
+
+            for (let x = 0; x < width; x++) {
+                const isDark = (imageData[x * 4] < 128);
+                if (isDark === lastIsDark) {
+                    currentRun++;
+                } else {
+                    if (currentRun > 0 && currentRun < minRun) {
+                        minRun = currentRun;
+                    }
+                    currentRun = 1;
+                    lastIsDark = isDark;
+                }
+            }
+            if (currentRun > 0 && currentRun < minRun) minRun = currentRun;
+
+            if (minRun <= 0 || minRun === width) return 100;
+            return Math.round(width / minRun);
+        }
+
+        function updateEngineeringMetrics(s) {
+            document.getElementById('metricXDimMm').textContent = s.xDimensionMm.toFixed(3) + ' mm';
+            document.getElementById('metricXDimMil').textContent = s.xDimensionMils.toFixed(2) + ' mil';
+
+            document.getElementById('metricModules').textContent = `${s.numModulesX} x ${s.numModulesY}`;
+
+            const effInchesW = s.effectiveWidthMm / MM_PER_INCH;
+            const effInchesH = s.effectiveHeightMm / MM_PER_INCH;
+
+            document.getElementById('metricEffectiveSize').textContent = `${s.effectiveWidthMm.toFixed(1)} x ${s.effectiveHeightMm.toFixed(1)} mm`;
+            document.getElementById('metricEffectiveInches').textContent = `${effInchesW.toFixed(3)} x ${effInchesH.toFixed(3)} in`;
+
+            document.getElementById('metricQuietZone').textContent = `${s.quietZoneWidthMm.toFixed(2)} mm`;
+            document.getElementById('metricQuietZoneSub').textContent = `${s.quietZoneModules} Modules Each Side`;
+
+            // Scanner Readability Guidance updates
+            const guidanceEl = document.getElementById('readabilityGuidance');
+            if (s.xDimensionMils < 5.0) {
+                guidanceEl.innerHTML = `• <strong>High Density (X-Dim: ${s.xDimensionMils.toFixed(1)} mil / ${s.xDimensionMm.toFixed(3)} mm):</strong> Requires high-resolution industrial machine vision or handheld laser/imagers. Ensure high contrast and high printer resolution (600+ DPI).`;
+            } else if (s.xDimensionMils <= 20.0) {
+                guidanceEl.innerHTML = `• <strong>Standard Industrial Density (X-Dim: ${s.xDimensionMils.toFixed(1)} mil / ${s.xDimensionMm.toFixed(3)} mm):</strong> Optimal for high-speed conveyor readers, Datalogic Matrix/Powerscan series, and packaging lines. Good depth of field.`;
+            } else {
+                guidanceEl.innerHTML = `• <strong>Large Logistics / Long Range (X-Dim: ${s.xDimensionMils.toFixed(1)} mil / ${s.xDimensionMm.toFixed(3)} mm):</strong> Ideal for pallet barcodes, warehouse rack tags, and long-range retro-reflective scanners.`;
+            }
+        }
+
+        function updateAnnotations(wMm, hMm) {
+            const hAnnot = document.getElementById('annotH');
+            const vAnnot = document.getElementById('annotV');
+
+            let displayWMm = wMm;
+            let displayHMm = hMm;
+
+            if (currentUnit === 'in') {
+                hAnnot.querySelector('span').textContent = (wMm / MM_PER_INCH).toFixed(2) + ' in';
+                vAnnot.querySelector('span').textContent = (hMm / MM_PER_INCH).toFixed(2) + ' in';
+            } else if (currentUnit === 'mil') {
+                hAnnot.querySelector('span').textContent = ((wMm / MM_PER_INCH) * MILS_PER_INCH).toFixed(0) + ' mil';
+                vAnnot.querySelector('span').textContent = ((hMm / MM_PER_INCH) * MILS_PER_INCH).toFixed(0) + ' mil';
+            } else {
+                hAnnot.querySelector('span').textContent = wMm.toFixed(1) + ' mm';
+                vAnnot.querySelector('span').textContent = hMm.toFixed(1) + ' mm';
+            }
+        }
+
+        function validateConfiguration(s) {
+            let status = 'valid';
+            let msg = 'VALID & ACHIEVABLE - Industrial Print Ready';
+
+            if (s.xDimensionMils < 3.0) {
+                status = 'warning';
+                msg = `CAUTION - X-Dimension is extremely small (${s.xDimensionMils.toFixed(1)} mil). May exceed printer resolution or scanner optics limit.`;
+            } else if (s.xDimensionMils > 50.0) {
+                status = 'warning';
+                msg = `CAUTION - Large X-Dimension (${s.xDimensionMils.toFixed(1)} mil). Verify physical scanner field of view (FOV).`;
+            } else if (s.quietZoneModules < 5 && s.spec.type === '1d') {
+                status = 'warning';
+                msg = 'CAUTION - Quiet zone is below recommended 10 modules. May cause decode failures.';
+            }
+
+            updateStatusBanner(status, msg);
+        }
+
+        function updateStatusBanner(status, text) {
+            const banner = document.getElementById('statusBanner');
+            banner.className = 'status-banner ' + status;
+            document.getElementById('statusBannerText').textContent = text;
+        }
+
+        function onZoomChange(val) {
+            currentZoom = val;
+            document.getElementById('previewScaleLabel').textContent = `Zoom: ${val}%`;
+            const box = document.getElementById('barcodeBox');
+            box.style.transform = `scale(${val / 100})`;
+        }
+
+        function resetZoom() {
+            document.getElementById('zoomSlider').value = 100;
+            onZoomChange(100);
+        }
+
+        function toggleCleanPreview() {
+            isCleanPreview = !isCleanPreview;
+            const btn = document.getElementById('cleanPreviewBtn');
+            btn.classList.toggle('btn-primary', isCleanPreview);
+            updatePreviewDisplay();
+        }
+
+        function updatePreviewDisplay() {
+            const showAnnot = document.getElementById('showAnnotationsCheckbox').checked && !isCleanPreview;
+            const showGrid = document.getElementById('showGridCheckbox').checked && !isCleanPreview;
+
+            document.getElementById('annotH').style.display = showAnnot ? 'flex' : 'none';
+            document.getElementById('annotV').style.display = showAnnot ? 'flex' : 'none';
+
+            const box = document.getElementById('barcodeBox');
+            if (isCleanPreview) {
+                box.style.border = 'none';
+                box.style.boxShadow = 'none';
+            } else {
+                box.style.border = showGrid ? '1px dashed var(--dl-red)' : 'none';
+                box.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+            }
+        }
+
+        function loadPreset(key) {
+            if (key === 'custom' || !PRESETS[key]) return;
+            const p = PRESETS[key];
+
+            document.getElementById('symbologySelect').value = p.symbology;
+
+            if (p.unit) setUnit(p.unit);
+
+            document.getElementById('targetWidthInput').value = p.widthMm;
+            document.getElementById('targetHeightInput').value = p.heightMm;
+            document.getElementById('includeTextCheckbox').checked = p.includeText;
+
+            setPayloadMode(p.payloadMode);
+
+            if (p.payloadMode === 'manual' && p.manualData) {
+                document.getElementById('barcodeDataInput').value = p.manualData;
+            } else if (p.charCount) {
+                document.getElementById('charCountInput').value = p.charCount;
+            }
+
+            onSymbologyChange();
+        }
+
+        function copyPayloadToClipboard() {
+            const payload = document.getElementById('barcodeDataInput').value;
+            navigator.clipboard.writeText(payload).then(() => {
+                alert('Barcode payload copied to clipboard: ' + payload);
+            }).catch(err => {
+                alert('Copy failed: ' + err);
+            });
+        }
+
+        function resetConfiguration() {
+            document.getElementById('presetSelect').value = 'custom';
+            document.getElementById('symbologySelect').value = 'code128';
+            setUnit('mm');
+            setPayloadMode('auto');
+            document.getElementById('targetWidthInput').value = 100.0;
+            document.getElementById('targetHeightInput').value = 25.0;
+            document.getElementById('quietZoneModeSelect').value = 'auto';
+            document.getElementById('quietZoneInclusionSelect').value = 'include';
+            document.getElementById('includeTextCheckbox').checked = true;
+            document.getElementById('fgColorInput').value = '#000000';
+            document.getElementById('bgColorInput').value = '#ffffff';
+            onSymbologyChange();
+        }
+
+        function exportJsonConfig() {
+            if (!lastBarcodeSymbol) return;
+            const config = {
+                preset: document.getElementById('presetSelect').value,
+                symbology: lastBarcodeSymbol.symKey,
+                payloadMode: payloadMode,
+                payload: lastBarcodeSymbol.payload,
+                charCount: document.getElementById('charCountInput').value,
+                targetWidth: document.getElementById('targetWidthInput').value,
+                targetHeight: document.getElementById('targetHeightInput').value,
+                unit: currentUnit,
+                quietZoneMode: document.getElementById('quietZoneModeSelect').value,
+                customQuietZone: document.getElementById('customQuietZoneInput').value,
+                quietZoneInclusion: document.getElementById('quietZoneInclusionSelect').value,
+                includeText: document.getElementById('includeTextCheckbox').checked,
+                fgColor: '#' + lastBarcodeSymbol.fgColor,
+                bgColor: '#' + lastBarcodeSymbol.bgColor,
+                metrics: {
+                    xDimensionMm: lastBarcodeSymbol.xDimensionMm,
+                    xDimensionMils: lastBarcodeSymbol.xDimensionMils,
+                    effectiveWidthMm: lastBarcodeSymbol.effectiveWidthMm,
+                    effectiveHeightMm: lastBarcodeSymbol.effectiveHeightMm
+                }
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Datalogic_Barcode_${lastBarcodeSymbol.symKey}_Config.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJsonConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const c = JSON.parse(e.target.result);
+                    if (c.symbology) document.getElementById('symbologySelect').value = c.symbology;
+                    if (c.unit) setUnit(c.unit);
+                    if (c.targetWidth) document.getElementById('targetWidthInput').value = c.targetWidth;
+                    if (c.targetHeight) document.getElementById('targetHeightInput').value = c.targetHeight;
+                    if (c.quietZoneMode) document.getElementById('quietZoneModeSelect').value = c.quietZoneMode;
+                    if (c.customQuietZone) document.getElementById('customQuietZoneInput').value = c.customQuietZone;
+                    if (c.quietZoneInclusion) document.getElementById('quietZoneInclusionSelect').value = c.quietZoneInclusion;
+                    if (c.includeText !== undefined) document.getElementById('includeTextCheckbox').checked = c.includeText;
+                    if (c.fgColor) document.getElementById('fgColorInput').value = c.fgColor;
+                    if (c.bgColor) document.getElementById('bgColorInput').value = c.bgColor;
+
+                    if (c.payloadMode) setPayloadMode(c.payloadMode);
+                    if (c.payload) document.getElementById('barcodeDataInput').value = c.payload;
+
+                    onSymbologyChange();
+                    alert('Configuration successfully loaded from JSON file.');
+                } catch (err) {
+                    alert('Failed to parse JSON configuration file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportPng() {
+            const canvas = document.getElementById('barcodeCanvas');
+            const link = document.createElement('a');
+            link.download = `Datalogic_Barcode_${lastBarcodeSymbol ? lastBarcodeSymbol.symKey : 'export'}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function exportSvg() {
+            if (!lastBarcodeSymbol) return;
+            try {
+                // Generate SVG using bwipjs.toSVG
+                const svgString = bwipjs.toSVG({
+                    bcid: lastBarcodeSymbol.symKey,
+                    text: lastBarcodeSymbol.payload,
+                    scale: 3,
+                    includetext: document.getElementById('includeTextCheckbox').checked && (lastBarcodeSymbol.spec.type === '1d'),
+                    textxalign: 'center',
+                    barcolor: lastBarcodeSymbol.fgColor,
+                    backgroundcolor: lastBarcodeSymbol.bgColor,
+                    paddingwidth: lastBarcodeSymbol.quietZoneModules,
+                    paddingheight: (lastBarcodeSymbol.spec.type === '2d') ? lastBarcodeSymbol.quietZoneModules : 0
+                });
+
+                const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.href = url;
+                downloadAnchor.download = `Datalogic_Barcode_${lastBarcodeSymbol.symKey}.svg`;
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert('SVG export error: ' + err.message);
+            }
+        }
+
+        // PDF Generation
+        function openPdfModal() {
+            document.getElementById('pdfModal').classList.add('active');
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdfModal').classList.remove('active');
+        }
+
+        function generatePdf() {
+            if (!lastBarcodeSymbol) return;
+
+            const pageSize = document.getElementById('pdfPageSize').value; // 'a4', 'letter', 'a5'
+            const orientation = document.getElementById('pdfOrientation').value; // 'portrait', 'landscape'
+            const incHeader = document.getElementById('pdfIncludeHeader').checked;
+            const incRuler = document.getElementById('pdfIncludeRuler').checked;
+            const incAnnot = document.getElementById('pdfIncludeAnnotations').checked;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: orientation,
+                unit: 'mm',
+                format: pageSize
+            });
+
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+
+            let cursorY = 15;
+
+            // Header Section
+            if (incHeader) {
+                doc.setFillColor(18, 20, 23); // #121417
+                doc.rect(10, 10, pageW - 20, 18, 'F');
+
+                doc.setFillColor(229, 26, 36); // Datalogic Red #E51A24
+                doc.rect(14, 13, 28, 12, 'F');
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('DATALOGIC', 16, 20.5);
+
+                doc.setFontSize(11);
+                doc.text('BARCODE PRINT & CALIBRATION SPECIFICATION', 46, 18);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text('1:1 Physical Dimension Validation Sheet • Technical Machine Vision Target', 46, 23);
+
+                cursorY = 36;
+            }
+
+            // Render Barcode image at exact physical dimensions (1:1 scale)
+            const canvas = document.getElementById('barcodeCanvas');
+            const imgData = canvas.toDataURL('image/png');
+
+            const barcodeWidthMm = lastBarcodeSymbol.effectiveWidthMm;
+            const barcodeHeightMm = lastBarcodeSymbol.effectiveHeightMm;
+
+            const posX = (pageW - barcodeWidthMm) / 2;
+            const posY = cursorY + 15;
+
+            // Draw Barcode box background & image
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(posX - 2, posY - 2, barcodeWidthMm + 4, barcodeHeightMm + 4, 'S');
+            doc.addImage(imgData, 'PNG', posX, posY, barcodeWidthMm, barcodeHeightMm);
+
+            // Measurement annotations on PDF if enabled
+            if (incAnnot) {
+                doc.setDrawColor(229, 26, 36); // Red lines
+                doc.setFontSize(8);
+                doc.setTextColor(229, 26, 36);
+
+                // Horizontal width dimension line below barcode
+                const lineY = posY + barcodeHeightMm + 6;
+                doc.line(posX, lineY, posX + barcodeWidthMm, lineY);
+                doc.line(posX, lineY - 2, posX, lineY + 2);
+                doc.line(posX + barcodeWidthMm, lineY - 2, posX + barcodeWidthMm, lineY + 2);
+
+                const widthLabel = `${barcodeWidthMm.toFixed(1)} mm (${(barcodeWidthMm / MM_PER_INCH).toFixed(2)} in)`;
+                doc.text(widthLabel, posX + (barcodeWidthMm / 2) - 12, lineY + 4);
+
+                // Vertical height dimension line
+                const lineX = posX + barcodeWidthMm + 6;
+                doc.line(lineX, posY, lineX, posY + barcodeHeightMm);
+                doc.line(lineX - 2, posY, lineX + 2, posY);
+                doc.line(lineX - 2, posY + barcodeHeightMm, lineX + 2, posY + barcodeHeightMm);
+
+                const heightLabel = `${barcodeHeightMm.toFixed(1)} mm`;
+                doc.text(heightLabel, lineX + 3, posY + (barcodeHeightMm / 2));
+            }
+
+            cursorY = posY + barcodeHeightMm + 20;
+
+            // 50 mm Physical Calibration Reference Ruler
+            if (incRuler) {
+                doc.setFillColor(245, 245, 245);
+                doc.setDrawColor(180, 180, 180);
+                doc.rect(15, cursorY, pageW - 30, 22, 'FD');
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(40, 40, 40);
+                doc.text('50.0 mm PHYSICAL PRINT CALIBRATION REFERENCE RULER', 20, cursorY + 6);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Measure the line below with a mechanical caliper or precision scale after printing:', 20, cursorY + 10);
+
+                // Draw exact 50 mm calibration line
+                const rulerX = 20;
+                const rulerY = cursorY + 16;
+                const rulerLengthMm = 50.0;
+
+                doc.setDrawColor(0, 0, 0);
+                doc.setLineWidth(0.5);
+                doc.line(rulerX, rulerY, rulerX + rulerLengthMm, rulerY);
+
+                // Ruler Ticks
+                for (let i = 0; i <= 50; i += 5) {
+                    const tickX = rulerX + i;
+                    const tickH = (i % 10 === 0) ? 4 : 2;
+                    doc.line(tickX, rulerY, tickX, rulerY - tickH);
+                    if (i % 10 === 0) {
+                        doc.setFontSize(6);
+                        doc.text(`${i}`, tickX - 1, rulerY - tickH - 1);
+                    }
+                }
+                doc.text('50 mm', rulerX + rulerLengthMm + 3, rulerY + 1);
+
+                cursorY += 28;
+            }
+
+            // Engineering Metadata Summary Table
+            doc.setFillColor(250, 250, 250);
+            doc.setDrawColor(220, 220, 220);
+            doc.rect(15, cursorY, pageW - 30, 45, 'FD');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
+            doc.text('ENGINEERING CALCULATION & SYMBOLOGY SPECIFICATION', 20, cursorY + 7);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(60, 60, 60);
+
+            const col1 = 20;
+            const col2 = pageW / 2 + 5;
+            let rowY = cursorY + 14;
+
+            doc.text(`Symbology Type: ${lastBarcodeSymbol.spec.name}`, col1, rowY);
+            doc.text(`X-Dimension (Narrow Module): ${lastBarcodeSymbol.xDimensionMm.toFixed(3)} mm (${lastBarcodeSymbol.xDimensionMils.toFixed(2)} mil)`, col2, rowY);
+
+            rowY += 6;
+            doc.text(`Encoded Data Payload: ${lastBarcodeSymbol.payload}`, col1, rowY);
+            doc.text(`Module Grid Structure: ${lastBarcodeSymbol.numModulesX} x ${lastBarcodeSymbol.numModulesY} modules`, col2, rowY);
+
+            rowY += 6;
+            doc.text(`Payload Length: ${lastBarcodeSymbol.payload.length} characters`, col1, rowY);
+            doc.text(`Effective Print Size: ${lastBarcodeSymbol.effectiveWidthMm.toFixed(1)} x ${lastBarcodeSymbol.effectiveHeightMm.toFixed(1)} mm`, col2, rowY);
+
+            rowY += 6;
+            doc.text(`Quiet Zone Width: ${lastBarcodeSymbol.quietZoneWidthMm.toFixed(2)} mm (${lastBarcodeSymbol.quietZoneModules} modules)`, col1, rowY);
+            doc.text(`Timestamp: ${new Date().toLocaleString()}`, col2, rowY);
+
+            rowY += 8;
+            doc.setFontSize(7);
+            doc.setTextColor(120, 120, 120);
+            doc.text('Calibration Notice: Do not apply "Fit to Printable Area" or page scaling when printing this document.', col1, rowY);
+
+            closePdfModal();
+            doc.save(`Datalogic_Barcode_Calibration_${lastBarcodeSymbol.symKey}.pdf`);
+        }
+    </script>
+</body>
+</html>
