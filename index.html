@@ -42,24 +42,24 @@
             background-color: var(--dl-black);
             color: var(--dl-text-main);
             font-family: var(--dl-font-sans);
-            font-size: 13px;
-            line-height: 1.4;
+            font-size: 12px;
+            line-height: 1.3;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
         }
 
         /* Header */
         header {
             background-color: var(--dl-header-bg);
             border-bottom: 2px solid var(--dl-red);
-            padding: 12px 24px;
+            padding: 8px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 12px;
         }
 
         .brand-container {
@@ -108,13 +108,15 @@
         /* Main Container Layout */
         .app-container {
             display: grid;
-            grid-template-columns: 420px 1fr;
-            gap: 16px;
-            padding: 16px;
+            grid-template-columns: 400px 1fr;
+            gap: 12px;
+            padding: 10px;
             flex: 1;
             max-width: 1800px;
             margin: 0 auto;
             width: 100%;
+            height: calc(100vh - 95px);
+            overflow: hidden;
         }
 
         @media (max-width: 1024px) {
@@ -136,9 +138,9 @@
         .panel-header {
             background-color: var(--dl-card-bg);
             border-bottom: 1px solid var(--dl-border);
-            padding: 10px 16px;
+            padding: 6px 12px;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 11px;
             letter-spacing: 1px;
             text-transform: uppercase;
             color: var(--dl-text-main);
@@ -153,10 +155,10 @@
         }
 
         .panel-body {
-            padding: 16px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 8px;
             overflow-y: auto;
         }
 
@@ -165,10 +167,10 @@
             background-color: var(--dl-card-bg);
             border: 1px solid var(--dl-border);
             border-radius: 3px;
-            padding: 12px;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .section-title {
@@ -214,10 +216,10 @@
             background-color: var(--dl-black);
             border: 1px solid var(--dl-border-light);
             color: var(--dl-text-main);
-            padding: 6px 10px;
+            padding: 4px 8px;
             border-radius: 2px;
             font-family: var(--dl-font-mono);
-            font-size: 12px;
+            font-size: 11px;
             outline: none;
             transition: border-color 0.15s ease;
             width: 100%;
@@ -227,12 +229,13 @@
         input[type="number"]:focus,
         select:focus,
         textarea:focus {
-            border-color: var(--dl-red);
+            border-color: var(--dl-blue-hover);
         }
 
         textarea {
             resize: vertical;
-            min-height: 60px;
+            min-height: 38px;
+            height: 38px;
         }
 
         .input-with-unit {
@@ -367,8 +370,9 @@
             background-color: #08090A;
             border: 1px solid var(--dl-border);
             border-radius: 3px;
-            padding: 24px;
-            min-height: 380px;
+            padding: 16px;
+            min-height: 260px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -792,22 +796,6 @@
                                 <input type="number" id="targetHeightInput" step="0.1" value="25.0" oninput="onDimensionChange()">
                                 <span class="input-unit-label unit-display">mm</span>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Quiet Zone Options -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="quietZoneModeSelect">Quiet Zone Mode:</label>
-                            <select id="quietZoneModeSelect" onchange="onDimensionChange()">
-                                <option value="auto" selected>Automatic (Symbology Standard)</option>
-                                <option value="custom">Custom Quiet Zone</option>
-                                <option value="none">None (0 Quiet Zone)</option>
-                            </select>
-                        </div>
-                        <div class="form-group" id="customQuietZoneGroup">
-                            <label for="customQuietZoneInput">Quiet Zone (Modules):</label>
-                            <input type="number" id="customQuietZoneInput" min="0" max="50" value="10" oninput="onDimensionChange()">
                         </div>
                     </div>
 
@@ -1285,16 +1273,9 @@
             const targetWidthMm = convertUnitToMm(rawWidthVal, currentUnit);
             const targetHeightMm = convertUnitToMm(rawHeightVal, currentUnit);
 
-            // Quiet Zone mode & values
-            const qzMode = document.getElementById('quietZoneModeSelect').value;
-            document.getElementById('customQuietZoneGroup').style.display = (qzMode === 'custom') ? 'flex' : 'none';
-
+            // Quiet Zone default to automatic symbology standard
+            const qzMode = 'auto';
             let quietZoneModules = spec.quietZoneModules;
-            if (qzMode === 'custom') {
-                quietZoneModules = parseInt(document.getElementById('customQuietZoneInput').value) || 0;
-            } else if (qzMode === 'none') {
-                quietZoneModules = 0;
-            }
 
             const qzInclusion = document.getElementById('quietZoneInclusionSelect').value; // 'include' or 'exclude'
             const includeText = document.getElementById('includeTextCheckbox').checked && (spec.type === '1d');
@@ -1607,7 +1588,6 @@
             setPayloadMode('auto');
             document.getElementById('targetWidthInput').value = 100.0;
             document.getElementById('targetHeightInput').value = 25.0;
-            document.getElementById('quietZoneModeSelect').value = 'auto';
             document.getElementById('quietZoneInclusionSelect').value = 'include';
             document.getElementById('includeTextCheckbox').checked = true;
             document.getElementById('fgColorInput').value = '#000000';
@@ -1626,8 +1606,7 @@
                 targetWidth: document.getElementById('targetWidthInput').value,
                 targetHeight: document.getElementById('targetHeightInput').value,
                 unit: currentUnit,
-                quietZoneMode: document.getElementById('quietZoneModeSelect').value,
-                customQuietZone: document.getElementById('customQuietZoneInput').value,
+                quietZoneMode: 'auto',
                 quietZoneInclusion: document.getElementById('quietZoneInclusionSelect').value,
                 includeText: document.getElementById('includeTextCheckbox').checked,
                 fgColor: '#' + lastBarcodeSymbol.fgColor,
@@ -1661,8 +1640,6 @@
                     if (c.unit) setUnit(c.unit);
                     if (c.targetWidth) document.getElementById('targetWidthInput').value = c.targetWidth;
                     if (c.targetHeight) document.getElementById('targetHeightInput').value = c.targetHeight;
-                    if (c.quietZoneMode) document.getElementById('quietZoneModeSelect').value = c.quietZoneMode;
-                    if (c.customQuietZone) document.getElementById('customQuietZoneInput').value = c.customQuietZone;
                     if (c.quietZoneInclusion) document.getElementById('quietZoneInclusionSelect').value = c.quietZoneInclusion;
                     if (c.includeText !== undefined) document.getElementById('includeTextCheckbox').checked = c.includeText;
                     if (c.fgColor) document.getElementById('fgColorInput').value = c.fgColor;
