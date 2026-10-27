@@ -10,17 +10,20 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <style>
         :root {
-            --dl-black: #0E1012;
-            --dl-panel-bg: #16191C;
-            --dl-card-bg: #1E2227;
-            --dl-header-bg: #121417;
-            --dl-border: #2D333B;
-            --dl-border-light: #444C56;
-            --dl-red: #E51A24;
-            --dl-red-hover: #FF2E38;
-            --dl-red-dark: #A30D14;
+            --dl-black: #0F1216;
+            --dl-panel-bg: #171B21;
+            --dl-card-bg: #1F242D;
+            --dl-header-bg: #12151B;
+            --dl-border: #2E3542;
+            --dl-border-light: #424C5E;
+            --dl-blue: #00539C;
+            --dl-blue-hover: #0066CC;
+            --dl-blue-dark: #00386B;
+            --dl-red: #00539C;
+            --dl-red-hover: #0066CC;
+            --dl-red-dark: #00386B;
             --dl-text-main: #F0F6FC;
-            --dl-text-muted: #8B949E;
+            --dl-text-muted: #8B98A9;
             --dl-text-dark: #1F2328;
             --dl-status-green: #2EA043;
             --dl-status-amber: #D29922;
@@ -1135,9 +1138,25 @@
                 humanTextGroup.style.display = 'none';
             }
 
+            // Handle Target Height input for 2D barcodes (Auto calculated from Width)
+            const heightInput = document.getElementById('targetHeightInput');
+            if (spec.type === '2d') {
+                heightInput.readOnly = true;
+                heightInput.title = 'For 2D barcodes, height is calculated automatically from target width and module grid geometry.';
+                heightInput.style.backgroundColor = 'var(--dl-card-bg)';
+                heightInput.style.opacity = '0.85';
+            } else {
+                heightInput.readOnly = false;
+                heightInput.title = '';
+                heightInput.style.backgroundColor = 'var(--dl-black)';
+                heightInput.style.opacity = '1.0';
+            }
+
             // Update rules text
             let rulesStr = `• ${spec.name}: ${spec.numericOnly ? 'Numeric characters only.' : 'Supports standard payload.'}`;
-            if (spec.minLen === spec.maxLen) {
+            if (spec.type === '2d') {
+                rulesStr += ' Height is calculated automatically from width & aspect ratio.';
+            } else if (spec.minLen === spec.maxLen) {
                 rulesStr += ` Fixed length: ${spec.minLen} characters.`;
             }
             document.getElementById('symbologyRulesHint').textContent = rulesStr;
@@ -1315,11 +1334,10 @@
                 }
 
                 // Physical Calculations Engine
-                let symbolWidthMm = targetWidthMm;
                 let effectiveWidthMm = targetWidthMm;
 
-                if (qzInclusion === 'include') {
-                    // Target width includes quiet zones
+                if (qzInclusion === 'include' || qzMode === 'none') {
+                    // Target width includes quiet zones or quiet zone is none
                     effectiveWidthMm = targetWidthMm;
                 } else {
                     // Target width excludes quiet zone -> quiet zones are added on top
@@ -1331,7 +1349,14 @@
                 const xDimensionMm = effectiveWidthMm / numModulesX;
                 const xDimensionMils = xDimensionMm * MILS_PER_MM;
 
-                const effectiveHeightMm = targetHeightMm;
+                let effectiveHeightMm = targetHeightMm;
+                if (spec.type === '2d') {
+                    // For 2D barcodes, height is strictly determined by matrix ratio
+                    effectiveHeightMm = xDimensionMm * numModulesY;
+                    const convertedHeightInput = convertMmToUnit(effectiveHeightMm, currentUnit);
+                    document.getElementById('targetHeightInput').value = convertedHeightInput.toFixed(currentUnit === 'mil' ? 1 : 2);
+                }
+
                 const quietZoneWidthMm = xDimensionMm * quietZoneModules;
 
                 // Save symbol state
