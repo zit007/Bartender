@@ -666,7 +666,7 @@
             <div class="brand-badge">DATALOGIC</div>
             <div class="title-group">
                 <h1>BARCODE DIMENSIONING TOOL</h1>
-                <p>Industrial Barcode Generator &amp; Print Calibration Utility</p>
+                <p>Empower Your Vision &bull; Industrial Barcode &amp; Print Calibration Utility</p>
             </div>
         </div>
         <div class="header-actions">
@@ -966,6 +966,21 @@
                         <select id="pdfOrientation">
                             <option value="portrait" selected>Portrait</option>
                             <option value="landscape">Landscape</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Multiple Barcodes Controls -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pdfCountInput">Barcodes Per Page:</label>
+                        <input type="number" id="pdfCountInput" min="1" max="20" value="1" onchange="togglePdfDataDuplicateOption()">
+                    </div>
+                    <div class="form-group" id="pdfDataModeGroup" style="display: none;">
+                        <label for="pdfDataModeSelect">Payload Generation:</label>
+                        <select id="pdfDataModeSelect">
+                            <option value="duplicate" selected>Duplicate First Barcode Payload</option>
+                            <option value="random">Generate Random Unique Payloads</option>
                         </select>
                     </div>
                 </div>
@@ -1706,10 +1721,17 @@
         // PDF Generation
         function openPdfModal() {
             document.getElementById('pdfModal').classList.add('active');
+            togglePdfDataDuplicateOption();
         }
 
         function closePdfModal() {
             document.getElementById('pdfModal').classList.remove('active');
+        }
+
+        function togglePdfDataDuplicateOption() {
+            const count = parseInt(document.getElementById('pdfCountInput').value) || 1;
+            const group = document.getElementById('pdfDataModeGroup');
+            group.style.display = (count > 1) ? 'flex' : 'none';
         }
 
         function generatePdf() {
@@ -1717,6 +1739,8 @@
 
             const pageSize = document.getElementById('pdfPageSize').value; // 'a4', 'letter', 'a5'
             const orientation = document.getElementById('pdfOrientation').value; // 'portrait', 'landscape'
+            const barcodeCount = Math.max(1, Math.min(20, parseInt(document.getElementById('pdfCountInput').value) || 1));
+            const dataMode = document.getElementById('pdfDataModeSelect').value; // 'duplicate' vs 'random'
             const incHeader = document.getElementById('pdfIncludeHeader').checked;
             const incRuler = document.getElementById('pdfIncludeRuler').checked;
             const incAnnot = document.getElementById('pdfIncludeAnnotations').checked;
@@ -1735,10 +1759,10 @@
 
             // Header Section
             if (incHeader) {
-                doc.setFillColor(18, 20, 23); // #121417
+                doc.setFillColor(15, 18, 22); // #0F1216
                 doc.rect(10, 10, pageW - 20, 18, 'F');
 
-                doc.setFillColor(229, 26, 36); // Datalogic Red #E51A24
+                doc.setFillColor(0, 83, 156); // Datalogic Corporate Blue #00539C
                 doc.rect(14, 13, 28, 12, 'F');
 
                 doc.setTextColor(255, 255, 255);
@@ -1752,52 +1776,86 @@
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
                 doc.setTextColor(150, 150, 150);
-                doc.text('1:1 Physical Dimension Validation Sheet • Technical Machine Vision Target', 46, 23);
+                doc.text('Empower Your Vision • 1:1 Physical Dimension Validation Target', 46, 23);
 
                 cursorY = 36;
             }
 
-            // Render Barcode image at exact physical dimensions (1:1 scale)
-            const canvas = document.getElementById('barcodeCanvas');
-            const imgData = canvas.toDataURL('image/png');
-
             const barcodeWidthMm = lastBarcodeSymbol.effectiveWidthMm;
             const barcodeHeightMm = lastBarcodeSymbol.effectiveHeightMm;
 
-            const posX = (pageW - barcodeWidthMm) / 2;
-            const posY = cursorY + 15;
+            // Generate payload images for requested barcode count
+            const tempCanvas = document.createElement('canvas');
 
-            // Draw Barcode box background & image
-            doc.setDrawColor(200, 200, 200);
-            doc.rect(posX - 2, posY - 2, barcodeWidthMm + 4, barcodeHeightMm + 4, 'S');
-            doc.addImage(imgData, 'PNG', posX, posY, barcodeWidthMm, barcodeHeightMm);
+            for (let bIndex = 0; bIndex < barcodeCount; bIndex++) {
+                let currentPayload = lastBarcodeSymbol.payload;
+                if (bIndex > 0 && dataMode === 'random') {
+                    const spec = lastBarcodeSymbol.spec;
+                    const len = Math.max(spec.minLen, Math.min(spec.maxLen, currentPayload.length));
+                    currentPayload = generateRandomString(len, spec.numericOnly);
+                    if (spec.symKey === 'ean13' || spec.symKey === 'itf14') {
+                        const base = currentPayload.substring(0, len - 1);
+                        currentPayload = base + calcEanCheckDigit(base);
+                    }
+                }
 
-            // Measurement annotations on PDF if enabled
-            if (incAnnot) {
-                doc.setDrawColor(229, 26, 36); // Red lines
-                doc.setFontSize(8);
-                doc.setTextColor(229, 26, 36);
+                // Render barcode to temporary canvas
+                bwipjs.toCanvas(tempCanvas, {
+                    bcid: lastBarcodeSymbol.symKey,
+                    text: currentPayload,
+                    scale: 3,
+                    includetext: document.getElementById('includeTextCheckbox').checked && (lastBarcodeSymbol.spec.type === '1d'),
+                    textxalign: 'center',
+                    barcolor: lastBarcodeSymbol.fgColor,
+                    backgroundcolor: lastBarcodeSymbol.bgColor,
+                    paddingwidth: lastBarcodeSymbol.quietZoneModules,
+                    paddingheight: (lastBarcodeSymbol.spec.type === '2d') ? lastBarcodeSymbol.quietZoneModules : 0
+                });
 
-                // Horizontal width dimension line below barcode
-                const lineY = posY + barcodeHeightMm + 6;
-                doc.line(posX, lineY, posX + barcodeWidthMm, lineY);
-                doc.line(posX, lineY - 2, posX, lineY + 2);
-                doc.line(posX + barcodeWidthMm, lineY - 2, posX + barcodeWidthMm, lineY + 2);
+                const imgData = tempCanvas.toDataURL('image/png');
+                const posX = (pageW - barcodeWidthMm) / 2;
+                const posY = cursorY + 10;
 
-                const widthLabel = `${barcodeWidthMm.toFixed(1)} mm (${(barcodeWidthMm / MM_PER_INCH).toFixed(2)} in)`;
-                doc.text(widthLabel, posX + (barcodeWidthMm / 2) - 12, lineY + 4);
+                // Check page height space; add page if needed
+                if (posY + barcodeHeightMm + 20 > pageH - 20) {
+                    doc.addPage();
+                    cursorY = 15;
+                }
 
-                // Vertical height dimension line
-                const lineX = posX + barcodeWidthMm + 6;
-                doc.line(lineX, posY, lineX, posY + barcodeHeightMm);
-                doc.line(lineX - 2, posY, lineX + 2, posY);
-                doc.line(lineX - 2, posY + barcodeHeightMm, lineX + 2, posY + barcodeHeightMm);
+                const renderPosY = cursorY + 10;
 
-                const heightLabel = `${barcodeHeightMm.toFixed(1)} mm`;
-                doc.text(heightLabel, lineX + 3, posY + (barcodeHeightMm / 2));
+                // Draw Barcode box background & image
+                doc.setDrawColor(0, 83, 156);
+                doc.rect(posX - 2, renderPosY - 2, barcodeWidthMm + 4, barcodeHeightMm + 4, 'S');
+                doc.addImage(imgData, 'PNG', posX, renderPosY, barcodeWidthMm, barcodeHeightMm);
+
+                // Measurement annotations on PDF if enabled
+                if (incAnnot) {
+                    doc.setDrawColor(0, 83, 156);
+                    doc.setFontSize(7);
+                    doc.setTextColor(0, 83, 156);
+
+                    // Horizontal width dimension line below barcode
+                    const lineY = renderPosY + barcodeHeightMm + 5;
+                    doc.line(posX, lineY, posX + barcodeWidthMm, lineY);
+                    doc.line(posX, lineY - 1.5, posX, lineY + 1.5);
+                    doc.line(posX + barcodeWidthMm, lineY - 1.5, posX + barcodeWidthMm, lineY + 1.5);
+
+                    const widthLabel = `${barcodeWidthMm.toFixed(1)} mm [${currentPayload}]`;
+                    doc.text(widthLabel, posX + (barcodeWidthMm / 2) - 15, lineY + 3.5);
+
+                    // Vertical height dimension line
+                    const lineX = posX + barcodeWidthMm + 5;
+                    doc.line(lineX, renderPosY, lineX, renderPosY + barcodeHeightMm);
+                    doc.line(lineX - 1.5, renderPosY, lineX + 1.5, renderPosY);
+                    doc.line(lineX - 1.5, renderPosY + barcodeHeightMm, lineX + 1.5, renderPosY + barcodeHeightMm);
+
+                    const heightLabel = `${barcodeHeightMm.toFixed(1)} mm`;
+                    doc.text(heightLabel, lineX + 2, renderPosY + (barcodeHeightMm / 2));
+                }
+
+                cursorY = renderPosY + barcodeHeightMm + 14;
             }
-
-            cursorY = posY + barcodeHeightMm + 20;
 
             // 50 mm Physical Calibration Reference Ruler
             if (incRuler) {
