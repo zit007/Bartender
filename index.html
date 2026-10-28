@@ -1028,28 +1028,28 @@
 
         // Symbology metadata rules
         const SYMBOLOGY_SPECS = {
-            'code128': { name: 'Code 128', type: '1d', numericOnly: false, minLen: 1, maxLen: 80, defaultText: 'DATALOGIC123', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
-            'code39': { name: 'Code 39', type: '1d', numericOnly: false, minLen: 1, maxLen: 50, defaultText: 'DATALOGIC39', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
-            'code93': { name: 'Code 93', type: '1d', numericOnly: false, minLen: 1, maxLen: 60, defaultText: 'DATALOGIC93', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
-            'codabar': { name: 'Codabar', type: '1d', numericOnly: false, minLen: 2, maxLen: 40, defaultText: 'A123456789B', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
-            'interleaved2of5': { name: 'Interleaved 2 of 5', type: '1d', numericOnly: true, minLen: 2, maxLen: 50, defaultText: '1234567890', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
-            'itf14': { name: 'ITF-14', type: '1d', numericOnly: true, minLen: 13, maxLen: 14, defaultText: '10012345678902', defaultWidthMm: 120, defaultHeightMm: 32, quietZoneModules: 10 },
-            'upca': { name: 'UPC-A', type: '1d', numericOnly: true, minLen: 11, maxLen: 12, defaultText: '012345678905', defaultWidthMm: 37.3, defaultHeightMm: 25.9, quietZoneModules: 9 },
-            'upce': { name: 'UPC-E', type: '1d', numericOnly: true, minLen: 7, maxLen: 8, defaultText: '01234565', defaultWidthMm: 22.0, defaultHeightMm: 25.9, quietZoneModules: 9 },
-            'ean8': { name: 'EAN-8', type: '1d', numericOnly: true, minLen: 7, maxLen: 8, defaultText: '20123451', defaultWidthMm: 26.7, defaultHeightMm: 21.3, quietZoneModules: 7 },
-            'ean13': { name: 'EAN-13', type: '1d', numericOnly: true, minLen: 12, maxLen: 13, defaultText: '4012345678901', defaultWidthMm: 37.3, defaultHeightMm: 25.9, quietZoneModules: 11 },
-            'gs1-128': { name: 'GS1-128', type: '1d', numericOnly: false, minLen: 4, maxLen: 80, defaultText: '(01)00012345678905(10)ABC123', defaultWidthMm: 130, defaultHeightMm: 32, quietZoneModules: 10 },
-            'databaromni': { name: 'GS1 DataBar Omnidirectional', type: '1d', numericOnly: true, minLen: 13, maxLen: 14, defaultText: '00012345678905', defaultWidthMm: 50, defaultHeightMm: 15, quietZoneModules: 5 },
-            'databarexpanded': { name: 'GS1 DataBar Expanded', type: '1d', numericOnly: false, minLen: 4, maxLen: 80, defaultText: '(01)90614141000015(3103)000500', defaultWidthMm: 80, defaultHeightMm: 18, quietZoneModules: 5 },
+            'code128': { bcid: 'code128', name: 'Code 128', type: '1d', numericOnly: false, minLen: 1, maxLen: 80, defaultText: 'DATALOGIC123', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'code39': { bcid: 'code39', name: 'Code 39', type: '1d', numericOnly: false, minLen: 1, maxLen: 50, defaultText: 'DATALOGIC39', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'code93': { bcid: 'code93', name: 'Code 93', type: '1d', numericOnly: false, minLen: 1, maxLen: 60, defaultText: 'DATALOGIC93', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'codabar': { bcid: 'rationalizedCodabar', name: 'Codabar', type: '1d', numericOnly: false, minLen: 2, maxLen: 40, defaultText: 'A123456789B', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'interleaved2of5': { bcid: 'interleaved2of5', name: 'Interleaved 2 of 5', type: '1d', numericOnly: true, minLen: 2, maxLen: 50, defaultText: '1234567890', defaultWidthMm: 100, defaultHeightMm: 25, quietZoneModules: 10 },
+            'itf14': { bcid: 'itf14', name: 'ITF-14', type: '1d', numericOnly: true, minLen: 13, maxLen: 14, defaultText: '10012345678902', defaultWidthMm: 120, defaultHeightMm: 32, quietZoneModules: 10 },
+            'upca': { bcid: 'upca', name: 'UPC-A', type: '1d', numericOnly: true, minLen: 11, maxLen: 12, defaultText: '012345678905', defaultWidthMm: 37.3, defaultHeightMm: 25.9, quietZoneModules: 9 },
+            'upce': { bcid: 'upce', name: 'UPC-E', type: '1d', numericOnly: true, minLen: 7, maxLen: 8, defaultText: '01234565', defaultWidthMm: 22.0, defaultHeightMm: 25.9, quietZoneModules: 9 },
+            'ean8': { bcid: 'ean8', name: 'EAN-8', type: '1d', numericOnly: true, minLen: 7, maxLen: 8, defaultText: '20123451', defaultWidthMm: 26.7, defaultHeightMm: 21.3, quietZoneModules: 7 },
+            'ean13': { bcid: 'ean13', name: 'EAN-13', type: '1d', numericOnly: true, minLen: 12, maxLen: 13, defaultText: '4012345678901', defaultWidthMm: 37.3, defaultHeightMm: 25.9, quietZoneModules: 11 },
+            'gs1-128': { bcid: 'gs1-128', name: 'GS1-128', type: '1d', numericOnly: false, minLen: 18, maxLen: 80, defaultText: '(01)00012345678905(10)ABC123', defaultWidthMm: 130, defaultHeightMm: 32, quietZoneModules: 10, isGS1: true },
+            'databaromni': { bcid: 'databaromni', name: 'GS1 DataBar Omnidirectional', type: '1d', numericOnly: true, minLen: 18, maxLen: 18, defaultText: '(01)00012345678905', defaultWidthMm: 50, defaultHeightMm: 15, quietZoneModules: 5, isGS1: true },
+            'databarexpanded': { bcid: 'databarexpanded', name: 'GS1 DataBar Expanded', type: '1d', numericOnly: false, minLen: 18, maxLen: 80, defaultText: '(01)90614141000015(3103)000500', defaultWidthMm: 80, defaultHeightMm: 18, quietZoneModules: 5, isGS1: true },
 
             // 2D Symbologies
-            'datamatrix': { name: 'Data Matrix ECC 200', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-DM-2026', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 },
-            'gs1datamatrix': { name: 'GS1 DataMatrix', type: '2d', numericOnly: false, minLen: 4, maxLen: 100, defaultText: '(01)00012345678905(21)SN123456', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 },
-            'qrcode': { name: 'QR Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'HTTPS://WWW.DATALOGIC.COM', defaultWidthMm: 30, defaultHeightMm: 30, quietZoneModules: 4 },
-            'microqrcode': { name: 'Micro QR Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 20, defaultText: 'MQR1234', defaultWidthMm: 15, defaultHeightMm: 15, quietZoneModules: 2 },
-            'pdf417': { name: 'PDF417', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-PDF417-TEST-PAYLOAD', defaultWidthMm: 60, defaultHeightMm: 20, quietZoneModules: 2 },
-            'micropdf417': { name: 'MicroPDF417', type: '2d', numericOnly: false, minLen: 1, maxLen: 50, defaultText: 'MICRO-PDF-1234', defaultWidthMm: 40, defaultHeightMm: 15, quietZoneModules: 2 },
-            'azteccode': { name: 'Aztec Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-AZTEC-2026', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 }
+            'datamatrix': { bcid: 'datamatrix', name: 'Data Matrix ECC 200', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-DM-2026', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 },
+            'gs1datamatrix': { bcid: 'gs1datamatrix', name: 'GS1 DataMatrix', type: '2d', numericOnly: false, minLen: 18, maxLen: 100, defaultText: '(01)00012345678905(21)SN123456', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1, isGS1: true },
+            'qrcode': { bcid: 'qrcode', name: 'QR Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'HTTPS://WWW.DATALOGIC.COM', defaultWidthMm: 30, defaultHeightMm: 30, quietZoneModules: 4 },
+            'microqrcode': { bcid: 'microqrcode', name: 'Micro QR Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 20, defaultText: 'MQR1234', defaultWidthMm: 15, defaultHeightMm: 15, quietZoneModules: 2 },
+            'pdf417': { bcid: 'pdf417', name: 'PDF417', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-PDF417-TEST-PAYLOAD', defaultWidthMm: 60, defaultHeightMm: 20, quietZoneModules: 2 },
+            'micropdf417': { bcid: 'micropdf417', name: 'MicroPDF417', type: '2d', numericOnly: false, minLen: 1, maxLen: 50, defaultText: 'MICRO-PDF-1234', defaultWidthMm: 40, defaultHeightMm: 15, quietZoneModules: 2 },
+            'azteccode': { bcid: 'azteccode', name: 'Aztec Code', type: '2d', numericOnly: false, minLen: 1, maxLen: 100, defaultText: 'DATALOGIC-AZTEC-2026', defaultWidthMm: 25, defaultHeightMm: 25, quietZoneModules: 1 }
         };
 
         // Presets configuration
@@ -1157,7 +1157,9 @@
 
             // Update rules text
             let rulesStr = `• ${spec.name}: ${spec.numericOnly ? 'Numeric characters only.' : 'Supports standard payload.'}`;
-            if (spec.type === '2d') {
+            if (spec.isGS1) {
+                rulesStr += ' Requires GS1 Application Identifier (AI) format, e.g. (01)00012345678905(10)BATCH123.';
+            } else if (spec.type === '2d') {
                 rulesStr += ' Height is calculated automatically from width & aspect ratio.';
             } else if (spec.minLen === spec.maxLen) {
                 rulesStr += ` Fixed length: ${spec.minLen} characters.`;
@@ -1187,6 +1189,66 @@
             return result;
         }
 
+        function upceToUpca(upce) {
+            if (upce.length !== 7 && upce.length !== 8) return null;
+            const sys = upce[0];
+            const d1 = upce[1], d2 = upce[2], d3 = upce[3], d4 = upce[4], d5 = upce[5], d6 = upce[6];
+            let upca = sys;
+            if (d6 === '0' || d6 === '1' || d6 === '2') {
+                upca += d1 + d2 + d6 + '0000' + d3 + d4 + d5;
+            } else if (d6 === '3') {
+                upca += d1 + d2 + d3 + '00000' + d4 + d5;
+            } else if (d6 === '4') {
+                upca += d1 + d2 + d3 + d4 + '00000' + d5;
+            } else {
+                upca += d1 + d2 + d3 + d4 + d5 + '0000' + d6;
+            }
+            return upca;
+        }
+
+        function calcEanCheckDigit(digits) {
+            let sum = 0;
+            const len = digits.length;
+            for (let i = 0; i < len; i++) {
+                let d = parseInt(digits.charAt(len - 1 - i), 10);
+                sum += (i % 2 === 0) ? d * 3 : d;
+            }
+            const checksum = (10 - (sum % 10)) % 10;
+            return checksum.toString();
+        }
+
+        function calcUpceCheckDigit(upce7) {
+            const upca11 = upceToUpca(upce7);
+            if (!upca11) return '0';
+            return calcEanCheckDigit(upca11);
+        }
+
+        function generateGS1Payload(symKey, targetLen) {
+            // GS1 DataBar Omnidirectional must strictly be GTIN-14 (AI 01)
+            const gtin13 = generateRandomString(13, true);
+            const gtin14 = gtin13 + calcEanCheckDigit(gtin13);
+            if (symKey === 'databaromni') {
+                return `(01)${gtin14}`;
+            }
+
+            // For GS1-128, GS1 DataMatrix, GS1 DataBar Expanded:
+            // Base is (01)GTIN-14, which is 18 characters long.
+            const base = `(01)${gtin14}`;
+            if (targetLen <= 18) {
+                return base;
+            }
+
+            // Append variable AI: AI (10) for batch or AI (21) for serial number
+            const extraNeeded = targetLen - 18 - 4; // subtract '(10)' or '(21)'
+            if (extraNeeded <= 0) {
+                return `${base}(10)A`;
+            }
+
+            const ai = (symKey === 'gs1datamatrix') ? '(21)' : '(10)';
+            const extraVal = generateRandomString(extraNeeded, false);
+            return `${base}${ai}${extraVal}`;
+        }
+
         function regeneratePayload() {
             const symKey = document.getElementById('symbologySelect').value;
             const spec = SYMBOLOGY_SPECS[symKey] || SYMBOLOGY_SPECS['code128'];
@@ -1201,7 +1263,9 @@
             }
 
             let payload = '';
-            if (symKey === 'ean13') {
+            if (spec.isGS1) {
+                payload = generateGS1Payload(symKey, count);
+            } else if (symKey === 'ean13') {
                 payload = generateRandomString(12, true);
                 payload += calcEanCheckDigit(payload);
             } else if (symKey === 'ean8') {
@@ -1211,10 +1275,14 @@
                 payload = generateRandomString(11, true);
                 payload += calcEanCheckDigit(payload);
             } else if (symKey === 'upce') {
-                payload = '0' + generateRandomString(6, true) + '0';
+                const upce7 = '0' + generateRandomString(6, true);
+                payload = upce7 + calcUpceCheckDigit(upce7);
             } else if (symKey === 'itf14') {
                 const base = generateRandomString(13, true);
                 payload = base + calcEanCheckDigit(base);
+            } else if (symKey === 'codabar') {
+                const bodyLen = Math.max(0, count - 2);
+                payload = 'A' + generateRandomString(bodyLen, true) + 'B';
             } else {
                 payload = generateRandomString(count, spec.numericOnly);
             }
@@ -1222,17 +1290,6 @@
             document.getElementById('barcodeDataInput').value = payload;
             document.getElementById('charCounter').textContent = payload.length + ' Chars';
             generateBarcode();
-        }
-
-        function calcEanCheckDigit(digits) {
-            let sum = 0;
-            const len = digits.length;
-            for (let i = 0; i < len; i++) {
-                let d = parseInt(digits.charAt(len - 1 - i), 10);
-                sum += (i % 2 === 0) ? d * 3 : d;
-            }
-            const checksum = (10 - (sum % 10)) % 10;
-            return checksum.toString();
         }
 
         function onCharCountChange() {
@@ -1289,7 +1346,7 @@
             try {
                 // Render barcode onto canvas using bwipjs
                 const opts = {
-                    bcid: symKey,
+                    bcid: spec.bcid || symKey,
                     text: payload,
                     scale: 3, // High rendering scale for sharp vector crispness
                     includetext: includeText,
@@ -1383,9 +1440,17 @@
 
             } catch (err) {
                 console.error('Barcode rendering error:', err);
-                payloadErrorEl.textContent = err.message || 'Error encoding barcode with selected symbology.';
+                let friendlyMsg = err.message || 'Error encoding barcode with selected symbology.';
+                if (spec.isGS1 && (friendlyMsg.includes('GS1aiMissingOpenParen') || friendlyMsg.includes('AIs must start with'))) {
+                    friendlyMsg = 'GS1 syntax error: Application Identifiers must start with "(" e.g. (01)00012345678905';
+                } else if (spec.isGS1 && friendlyMsg.includes('GS1valueTooShort')) {
+                    friendlyMsg = 'GS1 value error: One or more AI field values are too short.';
+                } else if (friendlyMsg.includes('badCheckDigit') || friendlyMsg.includes('Incorrect UPC check digit')) {
+                    friendlyMsg = 'Invalid check digit provided. Check the last digit of the payload.';
+                }
+                payloadErrorEl.textContent = friendlyMsg;
                 payloadErrorEl.classList.add('active');
-                updateStatusBanner('invalid', 'INVALID PAYLOAD - ' + (err.message || 'Encoding failed.'));
+                updateStatusBanner('invalid', 'INVALID PAYLOAD - ' + friendlyMsg);
             }
         }
 
@@ -1670,7 +1735,7 @@
             try {
                 // Generate SVG using bwipjs.toSVG
                 const svgString = bwipjs.toSVG({
-                    bcid: lastBarcodeSymbol.symKey,
+                    bcid: lastBarcodeSymbol.spec.bcid || lastBarcodeSymbol.symKey,
                     text: lastBarcodeSymbol.payload,
                     scale: 3,
                     includetext: document.getElementById('includeTextCheckbox').checked && (lastBarcodeSymbol.spec.type === '1d'),
@@ -1778,7 +1843,7 @@
 
                 // Render barcode to temporary canvas
                 bwipjs.toCanvas(tempCanvas, {
-                    bcid: lastBarcodeSymbol.symKey,
+                    bcid: lastBarcodeSymbol.spec.bcid || lastBarcodeSymbol.symKey,
                     text: currentPayload,
                     scale: 3,
                     includetext: document.getElementById('includeTextCheckbox').checked && (lastBarcodeSymbol.spec.type === '1d'),
